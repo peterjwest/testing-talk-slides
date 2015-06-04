@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+
+    <title>Testing JS</title>
+
+    <meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+    <meta name="author" content="Hakim El Hattab">
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/custom.css" id="theme">
+
+    <!-- Code syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/ir_black.css">
+
+    <!-- Printing and PDF exports -->
+    <script>
+      var link = document.createElement( 'link' );
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+      document.getElementsByTagName( 'head' )[0].appendChild( link );
+    </script>
+
+    <!--[if lt IE 9]>
+    <script src="lib/js/html5shiv.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <div class="reveal">
+
+      <div class="slides">
+        <section>
+          <h1>Testing JS</h1>
+          <h3>A tour through testing concepts and popular tooling</h3>
+          <p>
+            <small><a href="http://twitter.com/peterjwest">@peterjwest</a></small>
+          </p>
+        </section>
+
+        <section>
+          <h2>Continuum of testing</h2>
+          <img data-src="/lib/graph.png">
+        </section>
+
+        <section>
+          <section>
+            <h2>Unit tests</h2>
+            <ul>
+              <li>Test individual methods, objects and modules</li>
+              <li>Tests isolate from other systems and services with mocks and stubs</li>
+              <li>Aim for black box testing</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Mocha</h3>
+            <ul>
+              <li>Powerful and robust testing library</li>
+              <li>Very similar to Jasmine</li>
+              <li>Uses a hierarchical structure of helper functions to define test structure</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Mocha example</h3>
+            <div class="fragment fade-out absolute" data-fragment-index="0">
+              <h4>Simple</h4>
+              <pre><code class="javascript" data-trim contenteditable>
+describe('numberAdder', function() {
+  it('adds numbers', function() {
+    var result = numberAdder(1, 3);
+    assert.equal(result, 4);
+  });
+});
+              </code></pre>
+            </div>
+            <div class="fragment current-visible absolute" data-fragment-index="0">
+              <h4>Nested</h4>
+              <pre><code class="javascript" data-trim contenteditable>
+describe('SmartMaths', function() {
+  describe('numberAdder', function() {
+    it('adds numbers', function() {
+      var result = SmartMaths.numberAdder(1, 3);
+      assert.equal(result, 4);
+    });
+  });
+});
+              </code></pre>
+            </div>
+            <div class="fragment current-visible absolute">
+              <h4>Async</h4>
+              <pre><code class="javascript" data-trim contenteditable>
+describe('SmartMaths', function() {
+  describe('numberAdder', function() {
+    it('adds numbers', function(done) {
+      SmartMaths.numberAdder(1, 3, function(err, result) {
+        assert.equal(err, null);
+        assert.equal(result, 4);
+        done();
+      });
+    });
+  });
+});
+              </code></pre>
+            </div>
+            <div class="fragment current-visible absolute">
+              <h4>Skip &amp; Only</h4>
+              <pre><code class="javascript" data-trim contenteditable>
+describe('numberAdder', function() {
+  it.only('adds numbers', function(done) {
+    ...
+  });
+
+  it.skip("doesn't add strings", function(done) {
+    ...
+  });
+});
+              </code></pre>
+            </div>
+            <div class="fragment current-visible absolute">
+              <h4>Before &amp; after</h4>
+              <pre><code class="javascript" data-trim contenteditable>
+describe('numberAdder', function() {
+  beforeEach(function() {
+    this.lookup = mathsDb.lookup;
+    mathsDb.lookup = function(a, b, callback) {
+      assert.equal(a, 1);
+      assert.equal(b, 3);
+      callback(4);
+    }
+  });
+
+  afterEach(function() {
+    mathsDb.lookup = this.lookup;
+  });
+
+  it('adds numbers', function(done) {
+    ...
+  });
+});
+              </code></pre>
+            </div>
+          </section>
+
+          <section>
+            <h3>Sinon</h3>
+            <ul>
+              <li>Utility to create and manage mocks, spies and stubs</li>
+              <li>Spies add debugging to functions without altering their behaviour</li>
+              <li>Stubs replace functions with simple behaviours</li>
+              <li>Mocks are similar to stubs but can include assertions</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Sinon example</h3>
+            <div class="fragment fade-out absolute" data-fragment-index="0">
+              <h4>Manual stub</h4>
+              <pre><code class="javascript" data-trim contenteditable>
+describe('numberAdder', function() {
+  beforeEach(function() {
+    this.lookup = mathsDb.lookup;
+    mathsDb.lookup = function(a, b, callback) {
+      assert.equal(a, 1);
+      assert.equal(b, 3);
+      callback(4);
+    }
+  });
+
+  afterEach(function() {
+    mathsDb.lookup = this.lookup;
+  });
+
+  it('adds numbers', function(done) {
+    ...
+  });
+});
+              </code></pre>
+            </div>
+            <div class="fragment current-visible absolute" data-fragment-index="0">
+              <h4>With sinon</h4>
+              <pre><code class="javascript" data-trim contenteditable>
+describe('numberAdder', function() {
+  beforeEach(function() {
+    sinon.stub(mathsDb, 'lookup').calledWith(1, 3).yields(4);
+  });
+
+  afterEach(function() {
+    mathsDb.lookup.restore();
+  });
+
+  it('adds numbers', function(done) {
+    assert(mathsDb.lookup.calledOnce);
+    ...
+  });
+});
+              </code></pre>
+            </div>
+            <div class="fragment current-visible absolute">
+              <h4>Sandboxed</h4>
+              <pre><code class="javascript" data-trim contenteditable>
+describe('numberAdder', function() {
+  beforeEach(function() {
+    this.sinon = sinon.sandbox.create();
+    this.sinon.stub(mathsDb, 'lookup').calledWith(1, 3).yields(4);
+  });
+
+  afterEach(function() {
+    this.sinon.restore();
+  });
+
+  it('adds numbers', function(done) {
+    assert(mathsDb.lookup.calledOnce);
+    ...
+  });
+});
+              </code></pre>
+            </div>
+          </section>
+          <section>
+            <h3>Gulp</h3>
+            <ul>
+              <li>Task runner, similar to Grunt</li>
+              <li>Code as configuration (unlike Grunt)</li>
+              <li>Uses Node streams to wire up tasks</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Gulp example</h3>
+              <div class="relative">
+                <pre><code data-trim contenteditable>
+// gulpfile.js
+var gulp = require('gulp');
+var uglify = require('gulp-uglify');
+
+gulp.task('compress', function() {
+  return gulp.src(['lib/**/*.js', '!lib/jquery-lol.js'])
+  .pipe(uglify())
+  .pipe(gulp.dest('dist'));
+});
+                </code></pre>
+
+<!--                                <span class="fragment tooltip current-visible" style="left: 535px; top: 50px;">Define a task</span>
+                <span class="fragment tooltip current-visible" style="left: 834px; top: 78px;">Gulp utility for loading files</span>
+                <span class="fragment tooltip current-visible" style="left: 433px; top: 130px;">Gulp utility for writing files</span> -->
+              <pre><code data-trim contenteditable>
+$ gulp compress
+[13:19:38] Using gulpfile ~/projects/mouserat/gulpfile.js
+[13:19:38] Starting 'compress'...
+[13:19:39] Finished 'compress' after 150 ms
+              </code></pre>
+            </div>
+          </section>
+
+          <section>
+            <h3>Gulp &amp; Mocha</h3>
+            <pre><code data-trim contenteditable>
+var gulp = require('gulp');
+var mocha = require('gulp-mocha');
+gulp.task('test', function() {
+  return gulp.src(['test/server/**/*.js']).pipe(mocha());
+});
+            </code></pre>
+          </section>
+          <section>
+            <h3>Frontend tests - Karma</h3>
+            <pre><code data-trim contenteditable>
+var gulp = require('gulp');
+var karma = require('gulp-karma');
+gulp.task('test-client', function(cb) {
+  return gulp.src(['public/js/**/*.js', 'test/client/**/*.js'])
+    .pipe(karma({
+      configFile: 'karma.conf.js',
+      action: 'run'
+    }))
+    .on('error', cb);
+});
+            </code></pre>
+            <pre><code data-trim contenteditable>
+// karma.conf.js
+module.exports = function(config) {
+  config.set({
+    browsers: ['Chrome', 'PhantomJS'],
+    frameworks: ['mocha']
+  });
+};
+            </code></pre>
+          </section>
+
+          <section>
+            <h3>Angular testing with Karma</h3>
+            <pre><code data-trim contenteditable>
+beforeEach(module('ThingController'));
+beforeEach(inject(function($rootScope, $controller, $http) {
+  this.$controller = $controller;
+  this.$scope = $rootScope.$new();
+
+  $controller('dashboard', {
+    $scope: this.$scope,
+    $http: $http
+  });
+});
+
+it('should set a welcome message', function(){
+    assert.equal(this.$scope.text, 'Hello World!');
+});
+            </code></pre>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h2>Integration tests</h2>
+            <ul>
+              <li>Tests the integration between components or services</li>
+              <li>May use a combination of mocks and real services</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Example: routing layer</h3>
+            <h4>Server</h4>
+            <pre><code data-trim contenteditable>
+// app.js
+var request = require('supertest');
+var app = require('express')();
+
+var controllers = {
+  user: function(req, res) {
+    res.send(200, {});
+  }
+}
+
+app.get('/user', controllers);
+            </code></pre>
+          </section>
+          <section>
+            <h3>Example: routing layer</h3>
+            <h4>Test</h4>
+            <pre><code data-trim contenteditable>
+describe('GET /user', function() {
+  beforeEach(function() {
+    sinon.spy(controllers, 'user')
+  });
+
+  it('responds correctly', function(done) {
+    request(app)
+      .get('/user')
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200, function(err) {
+        assert(controllers.user.calledOnce);
+        done(err);
+      });
+  });
+});
+            </code></pre>
+          </section>
+          <section>
+            <h3>Database layer testing</h3>
+            <ul>
+              <li>Use fixtures to build and destroy data for tests</li>
+              <li>Keep tests independent where possible</li>
+            </ul>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h2>Functional &amp; acceptance tests</h2>
+            <ul>
+              <li>Functional tests check input/output through the whole application</li>
+              <li>User acceptance tests check a series of user steps through the system</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Protractor</h3>
+            <ul>
+              <li>Wrapper around Selenium and WebDriverJs</li>
+              <li>Runs tests through a real web browser and a real server</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Gulp &amp; Protractor</h3>
+              <pre><code data-trim contenteditable>
+var protractor = require("gulp-protractor").protractor;
+
+gulp.task('acceptance', function(cb) {
+  return gulp.src(["test/acceptance/**/*.js"])
+    .pipe(protractor({
+      configFile: "protractor.config.js",
+      args: ['--baseUrl', 'http://localhost:3000']
+    }));
+});
+              </code></pre>
+              <pre><code data-trim contenteditable>
+// protractor.config.js
+exports.config = {
+  framework: 'mocha',
+  seleniumServerJar: 'selenium-server-standalone.jar'
+};
+              </code></pre>
+          </section>
+          <section>
+            <h3>Testing with protractor</h3>
+            <pre class="small"><code data-trim contenteditable>
+var chai = require('chai');
+chai.use(require('chai-as-promised'));
+
+describe('the homepage', function() {
+  it('should allow you to write a message', function() {
+    browser.get('');
+
+    element(by.model('message')).sendKeys("Ima typing ma keyboard");
+    element(by.css('[value="add"]')).click();
+    element(by.id('button')).click();
+
+    var messages = element.all(by.repeater('message in messages'));
+    chai.expect(messages.count()).to.eventually.equal(0);
+    chai.expect(messages.get(0).getText()).to.eventually.equal("Ima typing ma keyboard");
+  });
+});
+            </code></pre>
+          </section>
+          <section>
+            <h3>What's missing?</h3>
+            <ul>
+              <li>Run the server somewhere</li>
+              <li>Set up an in-memory database for your test server</li>
+              <li>Think about fixtures for your database</li>
+            </ul>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h2>Smoke tests</h2>
+            <ul>
+              <li>Tests run on a live server, usually as a post-deploy check</li>
+              <li>Same approach as acceptance tests</li>
+              <li>Designed to verify the server and services are run correctly</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Smoke tests with protractor</h3>
+            <pre class="small"><code data-trim contenteditable>
+var protractor = require("gulp-protractor").protractor;
+
+gulp.task('smoke', function(cb) {
+  return gulp.src(["test/acceptance/**/*.js"])
+    .pipe(protractor({
+      configFile: "protractor.config.js",
+      args: ['--baseUrl', 'http://www.bensmindpalace.co.uk']
+    }));
+});
+            </code></pre>
+          </section>
+          <section>
+            <h3>Smoke test considerations</h3>
+            <ul>
+              <li>Try to cover critical paths for users</li>
+              <li>Try to cover all services e.g. authentication, database, email</li>
+              <li>Either:
+                <ul>
+                  <li>Write reversable, non-destructive tests</li>
+                  <li>or create a test account for smoke tests, separated from other users</li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h2>Bonus: code coverage</h2>
+            <ul>
+              <li>Normally used with unit tests</li>
+              <li>Tells you which parts of your code aren't being covered by tests</li>
+              <li>Great for tracking improvements to your test suite</li>
+              <li>Not a perfect tool - use with cynicism</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Istanbul.js</h3>
+            <ul>
+              <li>Awesome code coverage tool</li>
+              <li>Instruments seamlessly in Node</li>
+              <li>Bundled with Karma</li>
+              <li>Parses code to provide branch coverage</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Gulp &amp; Istanbul</h3>
+            <pre class="small"><code data-trim contenteditable>
+var gulp = require('gulp');
+var gulpIstanbul = require('gulp-istanbul');
+
+gulp.task('coverage', function(cb) {
+  return gulp.src(['lib/**/*.js'])
+    .pipe(gulpIstanbul({ includeUntested: true }))
+    .pipe(gulpIstanbul.hookRequire())
+    .on('end', function() {
+      gulp.src(['test/lib/**/*.js'])
+        .pipe(mocha())
+        .on('error', cb)
+        .pipe(gulpIstanbul.writeReports({ reporters: ['lcov', 'text-summary'] }))
+        .pipe(gulpIstanbul.enforceThresholds({ thresholds: { global: 1 }}))
+        .on('error', cb);
+    });
+});
+            </code></pre>
+          </section>
+          <section>
+            <h3>Istanbul thresholds</h3>
+            <ul>
+              <li>Provides coverage for statements, branches, lines and functions</li>
+              <li>Enforce coverage by percentage or omissions</li>
+            </ul>
+          </section>
+        </section>
+        <section>
+          <h2>Wrapping up</h2>
+          <ul>
+            <li>Choose the right tests for your project, tests take a lot of time to build</li>
+            <li>High level tests are great for checking your project against a spec, making sure it actually works, and they work great with Agile</li>
+            <li>Low level tests are great for making your project robust and maintainable</li>
+          </ul>
+        </section>
+        <section>
+          <h2>K thx</h2>
+          <p><small>
+            <a href="http://twitter.com/peterjwest">@peterjwest</a>
+          </small></p>
+        </section>
+      </div>
+    </div>
+
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+<!-- <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script> -->
+
+    <script>
+      // Full list of configuration options available at:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+
+        transition: 'concave', // none/fade/slide/convex/concave/zoom
+
+        // Optional reveal.js plugins
+        dependencies: [
+          { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+          { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+          { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+          { src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+          { src: 'plugin/zoom-js/zoom.js', async: true },
+          { src: 'plugin/notes/notes.js', async: true }
+        ]
+      });
+
+      // $(function() {
+      //   $('.tooltip').draggable();
+      // });
+    </script>
+
+  </body>
+</html>
